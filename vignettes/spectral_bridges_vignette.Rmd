@@ -8,8 +8,10 @@ output:
   rmarkdown::html_vignette:
     keep_md: true
   pdf_document: default
-vignette: "%\\VignetteIndexEntry{Using the Spectral Bridges Clustering} %\\VignetteEngine{knitr::rmarkdown}
-%\\VignetteEncoding{UTF-8}\n"
+vignette: >
+  %\VignetteIndexEntry{spectral_bridges}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 
