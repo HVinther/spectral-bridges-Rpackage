@@ -1,4 +1,4 @@
-# spectral-bridges-Rpackage
+# spectralBridges Rpackage
  Spectral Bridges Clustering Rpackage
 
 To install the package 
