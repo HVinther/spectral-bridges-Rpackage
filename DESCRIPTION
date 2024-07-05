@@ -7,7 +7,7 @@ Authors@R:
 Description: A package for spectral clustering using the spectral bridges method.
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Imports:
     ggplot2,
     kneedle,
