@@ -16,6 +16,17 @@ devtools::install_github("https://github.com/cambroise/spectral-bridges-Rpackage
 library(spectralBridges)
 ```
 
+## Usage
+
+```{r}
+X<-iris[,1:4] # Data to cluster
+True_classes<-iris$Species
+res<-spectral_bridges(X,n_cells=12,n_classes=3) # Partition in 3 classes
+table(True_classes,Est_classes=res$clustering)  
+```
+
+
+
 ## Documentation
 
 For detailed documentation, please refer to the package vignette.
