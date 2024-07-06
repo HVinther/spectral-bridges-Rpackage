@@ -48,9 +48,7 @@ spectral_bridges <-  function(X,
 
   # 2. Affinity computation
   ###################################
-
-
-  # Centrage de X
+  # Centering of X
   X.centered <- as.matrix(do.call(rbind, lapply(1:n, function(i) {
     X[i, ] - kmeans_centers[kmeans_labels[i], ]
   })))
@@ -58,28 +56,20 @@ spectral_bridges <-  function(X,
   # Pre-computation of distances between centers
   dist_centers <- as.matrix(dist(kmeans_centers))
 
-  # Affinity for one center
-  compute_affinity <- function(k) {
-    affinity_row <- numeric(n_cells)
-    for (l in 1:n_cells) {
-      if (k != l) {
-        distkl2 <- dist_centers[k, l]^2
-        centered_k <- X.centered[kmeans_labels == k, ]
-        centered_l <- X.centered[kmeans_labels == l, ]
-
-        alpha_kl <- pmax(0, (kmeans_centers[l, ] - kmeans_centers[k, ]) %*% t(centered_k)) / distkl2
-        alpha_lk <- pmax(0, (kmeans_centers[k, ] - kmeans_centers[l, ]) %*% t(centered_l)) / distkl2
-
-        alphai <- c(alpha_kl, alpha_lk)
-        affinity_row[l] <- sqrt(sum(alphai^2) / (kmeans_size[k] + kmeans_size[l]))
-      }
+  # Affinity
+  affinity<-matrix(0,n_cells,n_cells)
+  for (l in 1:(n_cells-1))
+    for (k in (l+1):n_cells){
+      distkl2 <- dist_centers[k, l]^2
+      centered_k <- X.centered[kmeans_labels == k, ]
+      centered_l <- X.centered[kmeans_labels == l, ]
+      alpha_kl <- pmax(0, (kmeans_centers[l, ] - kmeans_centers[k, ]) %*% t(centered_k)) / distkl2
+      alpha_lk <- pmax(0, (kmeans_centers[k, ] - kmeans_centers[l, ]) %*% t(centered_l)) / distkl2
+      alphai <- c(alpha_kl, alpha_lk)
+      affinity[l,k] <- sqrt(sum(alphai^2) / (kmeans_size[k] + kmeans_size[l]))
+      affinity[k,l] <- affinity[l,k]
     }
-    return(affinity_row)
-  }
 
-  # Affinity for all center in parallel
-  affinity <- lapply(1:n_cells, compute_affinity)
-  affinity <- do.call(rbind, affinity)
 
     if (transform=="exp"){
     gamma<- log(M)/diff(quantile(affinity,c(0.1,0.9)))
