@@ -1,0 +1,11 @@
+bibentry(
+  bibtype = "article",
+  author = "Laplante, Félix and Ambroise, Christophe",
+  title = "Spectral Bridges",
+  journal = "Computo",
+  date = "2025-07-06",
+  url = "https://github.com/cambroise/spectral-bridges-computo",
+  doi = "10.xxxx/xxx-xxx",
+  issn = "2824-7795",
+  langid = "en"
+)
