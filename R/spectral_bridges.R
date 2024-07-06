@@ -1,3 +1,4 @@
+#' @importFrom stats dist kmeans quantile
 #' @import ggplot2
 #' @import kneedle
 #' @import ClusterR
