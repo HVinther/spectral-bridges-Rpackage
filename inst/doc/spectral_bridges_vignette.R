@@ -11,8 +11,7 @@ library(factoextra)
 X<-iris[,1:4]
 True_classes<-iris$Species
 
-n_cells=12
-res<-spectral_bridges(X,n_cells=n_cells)
+res<-spectral_bridges(X,n_classes=3,n_cells=12)
 fviz_cluster(res)             
 knitr::kable(table(res$cluster,True_classes))
 
@@ -24,7 +23,7 @@ library(factoextra)
 # Sample data
 set.seed(123)
 X <- iris[,1:4]
-
+True_classes=iris$Species
 # Perform K-means clustering
 n_cells <- 12
 kmeans_result <- KMeans_rcpp(X, clusters = n_cells, num_init = 3, max_iters = 30, initializer = 'kmeans++')
@@ -76,4 +75,29 @@ if (transform == "exp") {
   gamma <- log(M) / diff(quantile(affinity, c(0.1, 0.9)))
   affinity <- exp(gamma * (affinity - 0.5 * max(affinity)))
 }
+
+## -----------------------------------------------------------------------------
+# Normalized Laplacian matrix
+D_inv_sqrt <- 1 / sqrt(rowSums(affinity))
+L <- diag(n_cells) - t(affinity * D_inv_sqrt) * D_inv_sqrt
+eigen.res <- eigen(-L, symmetric = TRUE)
+
+# Determine the number of classes using the kneedle method
+library(kneedle)
+n_classes<-3
+if (is.null(n_classes)) {
+  n_classes <- kneedle(x = 1:length(eigen.res$values), y = eigen.res$values)[1] - 1
+}
+plot(eigen.res$values)
+eigvecs <- eigen.res$vectors[, 1:n_classes]
+eigvecs <- eigvecs / sqrt(rowSums(eigvecs ^ 2))
+labels <- kmeans(eigvecs, nstart = 20, centers = n_classes)$cluster
+
+## -----------------------------------------------------------------------------
+# Assign labels based on clustering results
+clusters <- labels[kmeans_labels]
+
+# Return result
+result <- list(clustering = clusters, data = X, class = "partition")
+knitr::kable(table(Est_classes=result$clustering,True_classes=iris$Species))
 
