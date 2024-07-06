@@ -2,12 +2,11 @@
 title: "Spectral Bridges Clustering"
 author: "Christophe Ambroise"
 date: "`r Sys.Date()`"
-output:
-  html_document:
-    df_print: paged
-    rmarkdown::html_vignette:
+output: rmarkdown::html_vignette
+description: |
+  Principle and use of the algorithm
 vignette: >
-  %\VignetteIndexEntry{spectral_bridges}
+  %\VignetteIndexEntry{Spectral Bridges}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -117,38 +116,28 @@ kmeans_size <- kmeans_result$obs_per_cluster
 
 
 ```{r}
-# Center the data points within each cluster
-X.centered <- as.matrix(do.call(rbind, lapply(1:nrow(X), function(i) {
-  X[i, ] - kmeans_centers[kmeans_labels[i], ]
-})))
+ # Centering of X
+  X.centered <- as.matrix(do.call(rbind, lapply(1:n, function(i) {
+    X[i, ] - kmeans_centers[kmeans_labels[i], ]
+  })))
 
-# Pre-compute distances between cluster centers
-dist_centers <- as.matrix(dist(kmeans_centers))
+  # Pre-computation of distances between centers
+  dist_centers <- as.matrix(dist(kmeans_centers))
 
-# Define a function to compute affinity for one center
-compute_affinity <- function(k) {
-  affinity_row <- numeric(n_cells)
-  for (l in 1:n_cells) {
-    if (k != l) {
+  # Affinity
+  affinity<-matrix(0,n_cells,n_cells)
+  for (l in 1:(n_cells-1))
+    for (k in (l+1):n_cells){
       distkl2 <- dist_centers[k, l]^2
       centered_k <- X.centered[kmeans_labels == k, ]
       centered_l <- X.centered[kmeans_labels == l, ]
-
       alpha_kl <- pmax(0, (kmeans_centers[l, ] - kmeans_centers[k, ]) %*% t(centered_k)) / distkl2
       alpha_lk <- pmax(0, (kmeans_centers[k, ] - kmeans_centers[l, ]) %*% t(centered_l)) / distkl2
-
       alphai <- c(alpha_kl, alpha_lk)
-      affinity_row[l] <- sqrt(sum(alphai^2) / (kmeans_size[k] + kmeans_size[l]))
+      affinity[l,k] <- sqrt(sum(alphai^2) / (kmeans_size[k] + kmeans_size[l]))
+      affinity[k,l] <- affinity[l,k]
     }
-  }
-  return(affinity_row)
-}
 
-# Compute affinity for all centers using a for loop
-affinity <- matrix(0, n_cells, n_cells)
-for (k in 1:n_cells) {
-  affinity[k, ] <- compute_affinity(k)
-}
 ```
 
 
