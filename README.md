@@ -29,7 +29,10 @@ table(True_classes,Est_classes=res$clustering)
 
 ## Documentation
 
-For detailed documentation, please refer to the package vignette.
+For detailed documentation, please refer to the package vignette:
+```{r}
+vignette("spectral_bridges_vignette")
+```
 
 ## Python version
 
