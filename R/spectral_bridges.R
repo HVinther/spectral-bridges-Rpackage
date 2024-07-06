@@ -30,6 +30,31 @@ spectral_bridges <-  function(X,
                               n_classes = NULL,
                               n_cells = NULL,
                               M = 1e3,transform="exp"){
+  # Input validation
+  if (!is.matrix(X) && !is.data.frame(X)) {
+    stop("X must be a numeric matrix or data frame.")
+  }
+
+  if (!is.null(n_classes) && (!is.numeric(n_classes) || length(n_classes) != 1 || n_classes <= 0)) {
+    stop("n_classes must be a positive integer or NULL.")
+  }
+
+  if (!is.null(n_cells) && (!is.numeric(n_cells) || length(n_cells) != 1 || n_cells <= 0)) {
+    stop("n_cells must be a positive integer or NULL.")
+  }
+
+  if (!is.numeric(M) || length(M) != 1 || M <= 0) {
+    stop("M must be a positive number.")
+  }
+
+  if (!transform %in% c("exp", "none")) {
+    stop("transform must be one of 'exp' or 'none'.")
+  }
+
+  # Convert data frames to matrices
+  if (is.data.frame(X)) {
+    X <- as.matrix(X)
+  }
 
   # 1. Vector quantization
   ###################################
