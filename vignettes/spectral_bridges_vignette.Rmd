@@ -117,6 +117,7 @@ kmeans_size <- kmeans_result$obs_per_cluster
 
 ```{r}
  # Centering of X
+  n<-nrow(X)
   X.centered <- as.matrix(do.call(rbind, lapply(1:n, function(i) {
     X[i, ] - kmeans_centers[kmeans_labels[i], ]
   })))
