@@ -4,8 +4,7 @@
 ## Features
 
 -   **Spectral Bridges Algorithm**: Integrates k-means and spectral clustering with efficient affinity matrix calculation for improved clustering results.
--   **Scalability**: Designed to handle large datasets by optimizing cluster formation through advanced affinity matrix computations.
--   **Customizable**: Parameters such as number of clusters, iterations, and random state allow flexibility in clustering configurations.
+-   **Scalability**: Designed to handle large datasets by optimizing cluster formation through affinity matrix computations between centroids.
 
 ## Installation
 
@@ -42,7 +41,7 @@ Spectral Bridges Clustering algorithm is also available in python <https://pypi.
 
 ## Principles
 
-The proposed algorithm uses k-means centroids for vector quantization defining Voronoi region, and a strategy is proposed to link these regions, with an "affinity" gauged in terms of minimal margin between pairs of classes. These affinities are considered as weight of edges defining a completely connected graph whose vertices are the regions. Spectral clustering on the region provide a partition of the input space. The sole parameters of the algorithm are the number of Voronoi region and the number of final cluster. 
+The proposed algorithm uses k-means centroids for vector quantization defining Voronoi region, and a strategy is proposed to link these regions, with an "affinity" gauged in terms of minimal margin between pairs of classes. These affinities are considered as the weight of edges defining a completely connected graph whose vertices are the regions. Spectral clustering on the region provides a partition of the input space. The sole parameters of the algorithm are the number of Voronoi regions and the number of final clusters. 
 
 ### Bridge affinity 
 
