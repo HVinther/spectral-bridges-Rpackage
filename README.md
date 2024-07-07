@@ -27,14 +27,19 @@ table(True_classes,Est_classes=res$clustering)
 
 
 
-## Documentation
+## Documentation and help
 
 For detailed documentation, please refer to the package vignette:
 ```{r}
 vignette("spectral_bridges_vignette")
+help(spectral_bridges)
 ```
 
 ## Python version
 
 Spectral Bridges Clustering algorithm is also available in python <https://pypi.org/project/spectral-bridges/>
 
+
+## Principles
+
+<img src="vignettes/figures/bridges.png" align="left" height="139" />
