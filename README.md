@@ -46,7 +46,7 @@ The proposed algorithm uses k-means centroids for vector quantization defining V
 
 ### Bridge affinity 
 
-The basic idea involves calculating the difference in inertia achieved by projecting onto a segment connecting two centroids, rather than using the two centroids separately (See Figure @fig-balls-bridge). If the difference is small, it suggests a low density between the classes. Conversely, if this diffrence is large, it indicates that the two classes may reside within the same densely populated region.
+The basic idea involves calculating the difference in inertia achieved by projecting onto a segment connecting two centroids, rather than using the two centroids separately (See Figure below). If the difference is small, it suggests a low density between the classes. Conversely, if this difference is large, it indicates that the two classes may reside within the same densely populated region.
 
 <div style="width:1000px">
 <figure class="left" style="float:left">
@@ -57,95 +57,6 @@ The basic idea involves calculating the difference in inertia achieved by projec
 </figure>
  <p>Balls (left) versus Bridge (right). The inertia of each structure is the sum of the squared distances represented by grey lines.</p>
 </div>
-
-# Algorithm Explanation
-
-Let us consider a sample $X=(\mathbf{x}_{i} )_{i \in \{1,\cdots,n\}}$ of vectors $\mathbf{x}_i \in \mathbb{R}^p$ and a set of $m$ coding vectors $(\mathbf{\mu}_k)_{k \in \{1,\cdots,m\}}$ defining a partition $P=\{\mathcal{V}_1,\cdots,\mathcal{V}_m \}$ of $\mathbb{R}^p$ into $m$ Voronoi regions:
-
-$$
-\mathcal{V}_k = \{ \mathbf{x} \in \mathbb{R}^n \mid \|\mathbf{x} - \mathbf{\mu}_k\| \leq \|\mathbf{x} - \mathbf{\mu}_j\| \text{ for all } j \neq k \}.
-$$
-
-In the following, a ball denotes the subset of $X$ in a Voronoi region. The inertia of two balls 
-$\mathcal{V}_k$ and $\mathcal{V}_l$ is:
-$$
-I_{kl} = \sum_{\mathbf{x}_i\in \mathcal{V}_k} \|\mathbf{x}_i - \mathbf{\mu}_k\|^2  + \sum_{\mathbf{x}_i\in \mathcal{V}_l} \|\mathbf{x}_i - \mathbf{\mu}_l\|^2.
-$$ 
-
-We define a bridge as a structure defined by a segment connecting two centroids $\mathbf{\mu}_k$ and $\mathbf{\mu}_l$. The inertia of a bridge between $\mathcal{V}_k$ and $\mathcal{V}_l$ is defined as:
-
-$$
-B_{kl} = \sum_{\mathbf{x}_i\in \mathcal{V}_k \cup \mathcal{V}_l} \|\mathbf{x}_i - \mathbf{p}_{kl}(\mathbf{x}_i)\|^2,
-$$ 
-
-where 
-
-$$
-\mathbf{p}_{kl}(\mathbf{x}_i) = \mathbf{\mu}_k + t_i(\mathbf{\mu}_l - \mathbf{\mu}_k),
-$$ 
-
-with 
-
-$$
-t_i  = \min\left(1, \max\left(0, \frac{\langle \mathbf{x}_i - \mathbf{\mu}_k | \mathbf{\mu}_l - \mathbf{\mu}_k \rangle}{\| \mathbf{\mu}_l - \mathbf{\mu}_k \|^2}\right)\right).
-$$ 
-
-Considering two centroids, the normalized average of the difference between bridge and balls inertia constitutes the basis of our affinity measure between two regions:
-
-$$
-\begin{aligned}
-\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\mathbf{\mu}_k - \mathbf{\mu}_l\|^2} &= \frac{\sum_{\mathbf{x}_i \in \mathcal{V}_k} \langle \mathbf{x}_i - \mathbf{\mu}_k | \mathbf{\mu}_l - \mathbf{\mu}_k \rangle_+^2 + \sum_{\mathbf{x}_i \in \mathcal{V}_l} \langle \mathbf{x}_i - \mathbf{\mu}_l | \mathbf{\mu}_k - \mathbf{\mu}_l \rangle_+^2}{(n_k+n_l)\|\mathbf{\mu}_k - \mathbf{\mu}_l\|^4},\\
-&= \frac{\sum_{\mathbf{x}_i \in \mathcal{V}_k \cup \mathcal{V}_l} \alpha_i^2}{n_k+n_l},
-\end{aligned}
-$$
-
-where 
-
-$$
-\alpha_i=
-\begin{cases}
-t_i, & \text{ if } t_i \in [0,1/2],\\
-1-t_i, & \text{ if } t_i \in (1/2,1].
-\end{cases}
-$$ 
-
-The basic intuition behind this affinity is that $t_i$ represents the relative position of the projection of $\mathbf{x}_i$ on the segment $[\mathbf{\mu}_k,\mathbf{\mu}_l]$. $\alpha_i$ represents the relative position on the segment, with the centroid of the class to which $\mathbf{x}_i$ belongs as the starting point.
-
-The boundary that separates the two clusters defined by centroids $\mathbf{\mu}_k$ and $\mathbf{\mu}_l$ is a hyperplane. This hyperplane is orthogonal to the line segment connecting the centroids and intersects this segment at its midpoint.
-
-If we consider all points $\mathbf{x}_i \in \mathcal{V}_k \cup \mathcal{V}_l$ which are not projected on centroids but somewhere on the segment, the distance from a point to the hyperplane is:
-
-$$
-\|\mathbf{p}_{kl}(\mathbf{x}_i) - \mathbf{\mu}_{kl}\| = (1/2-\alpha_i) \| \mathbf{\mu}_k-\mathbf{\mu}_l \|.
-$$
-
-This distance is similar to the concept of margin in Support Vector Machines (SVM). When the $\alpha_i$ values are small (close to zero since $\alpha_i \in [0,1/2]$), the margins to the hyperplane are large, indicating a low density between the classes. Conversely, if the margins are small, it suggests that the two classes may reside within the same densely populated region. Consequently, the sum of the $\alpha_i$ or $\alpha_i^2$ increases with the density of the region between the classes.
-
-Note that the criterion is local and indicates the relative difference in densities between the balls and the bridge, rather than evaluating a global score for the densities of the structures.
-
-Eventually, we define the bridge affinity between centroids $k$ and $l$ as:
-
-$$
-a_{kl}=
-\begin{cases}
-0, & \text{ if } k=l,\\
-\frac{\sum_{\mathbf{x}_i \in \mathcal{V}_k \cup \mathcal{V}_l} \alpha_i^2}{n_k+n_l}, & \text{otherwise}.
-\end{cases}
-$$ 
-
-To allow points with large margin to dominate and make the algorithm more robust to noise and outliers we consider the following exponential transformation:
-
-$$
-\tilde{a}_{kl} = g(a_{kl})=\exp(\gamma\sqrt{a_{kl}}).
-$$
-
-where $\gamma$ is a scaling factor. This factor is set to ensure a large enough separation between the final coefficients. This factor is determined by the equation:
-
-$$
-\gamma = \frac{\log(M)}{\sqrt{q_{90}} - \sqrt{q_{10}}}
-$$
-
-where $q_{10}$ and $q_{90}$ are respectively the 10th and 90th percentiles of the original affinity matrix and $M > 0$. Thus, since the transformation is order-preserving, the 90th percentile of the newly constructed matrix is $M$ times greater than the 10th percentile. By default, $M$ is arbitrarily set to a large value of $10^4$.
 
 
 
