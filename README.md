@@ -1,4 +1,17 @@
 # spectralBridges Rpackage
+
+### Authors Information
+
+#### Félix Laplante
+**Email:** *flheight0@gmail.com*  
+**Affiliation:** Université de Paris Saclay
+
+#### Christophe Ambroise
+**Email:** *christophe.ambroise@univ-evry.fr*  
+**Affiliation:** Université Paris-Saclay, CNRS, Univ Evry, Laboratoire de Mathématiques et Modélisation
+
+## In a few words
+
  Spectral Bridges Clustering R package  implements a novel clustering algorithm combining k-means and spectral clustering techniques. It leverages efficient affinity matrix computation and merges clusters based on a connectivity measure inspired by SVM's margin concept. This package is designed to provide robust clustering solutions, particularly suited for large datasets. 
 
 ## Features
