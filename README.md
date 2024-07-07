@@ -42,4 +42,3 @@ Spectral Bridges Clustering algorithm is also available in python <https://pypi.
 
 ## Principles
 
-<img src="vignettes/figures/bridges.png" align="left" height="139" />
