@@ -44,6 +44,10 @@ spectral_bridges <-  function(X,
     stop("n_cells must be a positive integer or NULL.")
   }
 
+  if (n_cells<=n_classes) {
+    stop("Number of cells should be greater than number of clusters.")
+  }
+
   if (!is.numeric(M) || length(M) != 1 || M <= 0) {
     stop("M must be a positive number.")
   }
@@ -60,7 +64,7 @@ spectral_bridges <-  function(X,
   # 1. Vector quantization
   ###################################
   n <- nrow(X)
-  if (is.null(n_cells)) n_cells<-2*ceiling(log2(n)+1)
+  if (is.null(n_cells)) n_cells<-n_classes*7
 
   kmeans_result  = KMeans_rcpp(X, clusters = n_cells,
                                num_init = 3, max_iters =30,
