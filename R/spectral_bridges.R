@@ -44,7 +44,7 @@ spectral_bridges <-  function(X,
     stop("n_cells must be a positive integer or NULL.")
   }
 
-  if (n_cells<=n_classes) {
+  if (!is.null(n_cells) && (n_cells<=n_classes)) {
     stop("Number of cells should be greater than number of clusters.")
   }
 
