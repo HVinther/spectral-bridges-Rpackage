@@ -30,6 +30,7 @@ NULL
 spectral_bridges <-  function(X,
                               n_classes = NULL,
                               n_cells = NULL,
+                              p=2,
                               M = 1e3,transform="exp"){
   # Input validation
   if (!is.matrix(X) && !is.data.frame(X)) {
@@ -79,29 +80,39 @@ spectral_bridges <-  function(X,
   # 2. Affinity computation
   ###################################
   # Centering of X
-  X.centered <- as.matrix(do.call(rbind, lapply(1:n, function(i) {
-    X[i, ] - kmeans_centers[kmeans_labels[i], ]
-  })))
+  # Centering X
+  X.centered <- do.call(rbind, lapply(1:n_cells, function(k) {
+    sweep(X[kmeans_labels == k, ], 2, kmeans_centers[k, ])
+  }))
 
-  # Pre-computation of distances between centers
-  dist_centers <- as.matrix(dist(kmeans_centers))
+  # Affinity computation with power p
+  affinity <- matrix(0, n_cells, n_cells)
 
-  # Affinity
-  affinity<-matrix(0,n_cells,n_cells)
-  for (l in 1:(n_cells-1))
-    for (k in (l+1):n_cells){
-      distkl2 <- dist_centers[k, l]^2
-      centered_k <- X.centered[kmeans_labels == k, ]
-      centered_l <- X.centered[kmeans_labels == l, ]
-      alpha_kl <- pmax(0, (kmeans_centers[l, ] - kmeans_centers[k, ]) %*% t(centered_k)) / distkl2
-      alpha_lk <- pmax(0, (kmeans_centers[k, ] - kmeans_centers[l, ]) %*% t(centered_l)) / distkl2
-      alphai <- c(alpha_kl, alpha_lk)
-      affinity[l,k] <- sqrt(sum(alphai^2) / (kmeans_size[k] + kmeans_size[l]))
-      affinity[k,l] <- affinity[l,k]
-    }
+  for (k in 1:n_cells) {
+    # Difference between k-th center and all other centers
+    segments <- sweep(kmeans_centers, 2, kmeans_centers[k, ])
 
+    # Squared distances between centers
+    dist_kl2 <- rowSums(segments^2)
+    dist_kl2[k] <- 1  # Avoid division by zero for self-distances
 
-    if (transform=="exp"){
+    # Centered points for cluster k
+    centered_k <- X.centered[kmeans_labels == k, , drop = FALSE]
+
+    # Projections onto segments
+    projs <- pmax(0, centered_k %*% t(segments)) / dist_kl2
+    projs <- projs^p  # Raise projections to the power p
+
+    # Compute affinity by summing over projections
+    affinity[k, ] <- colSums(projs)
+  }
+
+  # Normalize affinity matrix
+  kmeans_sizes <- table(kmeans_labels)
+  counts <- outer(kmeans_sizes, kmeans_sizes, "+")
+  affinity <- ((affinity + t(affinity)) / counts)^(1 / p)
+
+  if (transform=="exp"){
     gamma<- log(M)/diff(quantile(affinity,c(0.1,0.9)))
     affinity<- exp(gamma*(affinity - 0.5*max(affinity)))}
 
