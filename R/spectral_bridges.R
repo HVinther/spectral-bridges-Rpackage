@@ -1,10 +1,5 @@
-#' @importFrom stats dist kmeans quantile
-#' @import ggplot2
-#' @import kneedle
 #' @import ClusterR
-#' @import factoextra
-NULL
-
+library(ClusterR)
 
 #' Spectral Bridges Clustering
 #'
@@ -12,9 +7,9 @@ NULL
 #'
 #' @param X A numeric matrix of data to be clustered.
 #' @param n_classes Number of classes to cluster into. If NULL, the number of classes will be determined automatically.
-#' @param n_cells Number of cells of Voronoi tesselation. If NULL, heuristic is used
+#' @param n_cells Number of cells of Voronoi tessellation. If NULL, a heuristic is used.
+#' @param p Power parameter for affinity computation.
 #' @param M A parameter for the transformation.
-#' @param transform Type of transformation to apply.
 #'
 #' @return A list containing the clustering result and the original data.
 #' @export
@@ -22,39 +17,36 @@ NULL
 #' @examples
 #' \dontrun{
 #' library(spectralBridges)
-#' X<-iris[,1:4]
-#' True_classes<-iris$Species
-#' res<-spectral_bridges(X,n_cells=12,n_classes=3)
-#' table(True_classes,Est_classes=res$clustering)
+#' X <- iris[, 1:4]
+#' True_classes <- iris$Species
+#' res <- spectral_bridges(X, n_cells = 12, n_classes = 3)
+#' table(True_classes, Est_classes = res$clustering)
 #' }
-spectral_bridges <-  function(X,
-                              n_classes = NULL,
-                              n_cells = NULL,
-                              p=2,
-                              M = 1e3,transform="exp"){
+#'
+spectral_bridges <- function(X, n_classes = NULL, n_cells = NULL, p = 2, M = 1e4) {
   # Input validation
   if (!is.matrix(X) && !is.data.frame(X)) {
     stop("X must be a numeric matrix or data frame.")
   }
 
-  if (!is.null(n_classes) && (!is.numeric(n_classes) || length(n_classes) != 1 || n_classes <= 0)) {
+  if (!is.numeric(n_classes) || length(n_classes) != 1 || n_classes <= 0) {
     stop("n_classes must be a positive integer or NULL.")
   }
 
-  if (!is.null(n_cells) && (!is.numeric(n_cells) || length(n_cells) != 1 || n_cells <= 0)) {
+  if (!is.numeric(n_cells) || length(n_cells) != 1 || n_cells <= 0) {
     stop("n_cells must be a positive integer or NULL.")
   }
 
-  if (!is.null(n_cells) && (n_cells<=n_classes)) {
-    stop("Number of cells should be greater than number of clusters.")
+  if (!is.null(n_cells) && (n_cells <= n_classes)) {
+    stop("Number of cells should be greater than the number of clusters.")
+  }
+
+  if (!is.numeric(p) || length(p) != 1 || p <= 0) {
+    stop("p must be a strictly positive number.")
   }
 
   if (!is.numeric(M) || length(M) != 1 || M <= 0) {
     stop("M must be a positive number.")
-  }
-
-  if (!transform %in% c("exp", "none")) {
-    stop("transform must be one of 'exp' or 'none'.")
   }
 
   # Convert data frames to matrices
@@ -62,48 +54,32 @@ spectral_bridges <-  function(X,
     X <- as.matrix(X)
   }
 
-  # 1. Vector quantization
+  # 1. Vector Quantization (K-Means)
   ###################################
-  n <- nrow(X)
-  if (is.null(n_cells)) n_cells<-n_classes*7
-
-  kmeans_result  = KMeans_rcpp(X, clusters = n_cells,
-                               num_init = 3, max_iters =30,
-                               initializer = 'kmeans++')
+  kmeans_result <- KMeans_rcpp(X, clusters = n_cells, num_init = 3, max_iters = 30, initializer = 'kmeans++')
 
   kmeans_centers <- as.matrix(kmeans_result$centroids)
-  kmeans_labels <-  kmeans_result$clusters
-  kmeans_size <-    kmeans_result$obs_per_cluster
-  kmeans_Iw<-kmeans_result$WCSS_per_cluster
+  kmeans_labels <- kmeans_result$clusters
 
-
-  # 2. Affinity computation
-  ###################################
-  # Centering of X
-  # Centering X
-  X.centered <- do.call(rbind, lapply(1:n_cells, function(k) {
+  # Center data by cluster centers
+  X_centered <- do.call(rbind, lapply(1:n_cells, function(k) {
     sweep(X[kmeans_labels == k, ], 2, kmeans_centers[k, ])
   }))
 
-  # Affinity computation with power p
+  # 2. Affinity Computation
+  ###################################
   affinity <- matrix(0, n_cells, n_cells)
 
   for (k in 1:n_cells) {
-    # Difference between k-th center and all other centers
     segments <- sweep(kmeans_centers, 2, kmeans_centers[k, ])
-
-    # Squared distances between centers
     dist_kl2 <- rowSums(segments^2)
-    dist_kl2[k] <- 1  # Avoid division by zero for self-distances
+    dist_kl2[k] <- 1  # Avoid division by zero
 
-    # Centered points for cluster k
-    centered_k <- X.centered[kmeans_labels == k, , drop = FALSE]
+    centered_k <- X_centered[kmeans_labels == k, , drop = FALSE]
+    projs <- centered_k %*% t(segments)
+    projs <- array(pmax(0, projs) / dist_kl2, dim = dim(projs))
+    projs <- projs^p
 
-    # Projections onto segments
-    projs <- pmax(0, centered_k %*% t(segments)) / dist_kl2
-    projs <- projs^p  # Raise projections to the power p
-
-    # Compute affinity by summing over projections
     affinity[k, ] <- colSums(projs)
   }
 
@@ -112,27 +88,25 @@ spectral_bridges <-  function(X,
   counts <- outer(kmeans_sizes, kmeans_sizes, "+")
   affinity <- ((affinity + t(affinity)) / counts)^(1 / p)
 
-  if (transform=="exp"){
-    gamma<- log(M)/diff(quantile(affinity,c(0.1,0.9)))
-    affinity<- exp(gamma*(affinity - 0.5*max(affinity)))}
+  gamma <- log(M) / diff(quantile(affinity, c(0.1, 0.9)))
+  affinity <- exp(gamma * (affinity - 0.5 * max(affinity)))
 
-  # 3. Spectral Clustering of the coding vectors
+  # 3. Spectral Clustering
   ###################################
-  # Normalized Laplacian matrix
   D_inv_sqrt <- 1 / sqrt(rowSums(affinity))
   L <- diag(n_cells) - t(affinity * D_inv_sqrt) * D_inv_sqrt
-  eigen.res<-eigen(-L, symmetric = TRUE)
-  ifelse(is.null(n_classes),
-         n_classes <- kneedle(x=1:length(eigen.res$values),y=eigen.res$values)[1]-1,
-         n_classes <-n_classes)
-  eigvecs <- eigen.res$vectors[,1:n_classes]
-  eigvecs <- eigvecs / sqrt(rowSums(eigvecs ^ 2))
-  labels <-
-    kmeans(eigvecs, nstart = 20, centers = n_classes)$cluster
+  eigen_res <- eigen(-L, symmetric = TRUE)
 
-  # 4. Contaminate
-  ###################################
+  if (is.null(n_classes)) {
+    n_classes <- kneedle(x = 1:length(eigen_res$values), y = eigen_res$values)[1] - 1
+  }
+
+  eigvecs <- eigen_res$vectors[, 1:n_classes]
+  eigvecs <- eigvecs / sqrt(rowSums(eigvecs^2))
+  labels <- kmeans(eigvecs, nstart = 20, centers = n_classes)$cluster
+
+  # Map back to original data
   clusters <- labels[kmeans_labels]
 
-  return(list(clustering = clusters,data =X,class="partition"))
+  return(list(clustering = clusters, data = X, class = "partition"))
 }
