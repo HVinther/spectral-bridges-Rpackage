@@ -2,3 +2,9 @@
 
 export(spectral_bridges)
 import(ClusterR)
+import(factoextra)
+import(ggplot2)
+import(kneedle)
+importFrom(stats,dist)
+importFrom(stats,kmeans)
+importFrom(stats,quantile)

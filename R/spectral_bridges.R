@@ -1,6 +1,3 @@
-#' @import ClusterR
-library(ClusterR)
-
 #' Spectral Bridges Clustering
 #'
 #' Performs spectral bridges clustering on the given dataset.
@@ -23,6 +20,11 @@ library(ClusterR)
 #' table(True_classes, Est_classes = res$clustering)
 #' }
 #'
+#' @import ClusterR
+#' @import factoextra
+#' @import ggplot2
+#' @import kneedle
+#' @importFrom stats dist kmeans quantile
 spectral_bridges <- function(X, n_classes = NULL, n_cells = NULL, p = 2, M = 1e4) {
   # Input validation
   if (!is.matrix(X) && !is.data.frame(X)) {
